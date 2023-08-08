@@ -1,0 +1,97 @@
+import tkinter as tk
+import sqlite3
+from tkinter import messagebox
+
+class CadastroEleitoresApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Cadastro de Eleitores")
+        
+        self.conn = sqlite3.connect('eleitores.db')
+        self.cursor = self.conn.cursor()
+        
+        self.setup_ui()
+        
+    def setup_ui(self):
+        # Labels e campos de entrada
+        tk.Label(self.root, text="Nome:").grid(row=0, column=0, sticky="w")
+        self.entry_nome = tk.Entry(self.root)
+        self.entry_nome.grid(row=0, column=1)
+        
+        tk.Label(self.root, text="Endereço:").grid(row=1, column=0, sticky="w")
+        self.entry_endereco = tk.Entry(self.root)
+        self.entry_endereco.grid(row=1, column=1)
+        
+        tk.Label(self.root, text="Local de Votação:").grid(row=2, column=0, sticky="w")
+        self.entry_local_votacao = tk.Entry(self.root)
+        self.entry_local_votacao.grid(row=2, column=1)
+        
+        # Botões
+        tk.Button(self.root, text="Salvar", command=self.salvar).grid(row=3, column=0, columnspan=2)
+        tk.Button(self.root, text="Editar", command=self.editar).grid(row=4, column=0, columnspan=2)
+        tk.Button(self.root, text="Excluir", command=self.excluir).grid(row=5, column=0, columnspan=2)
+        
+        # Lista de eleitores
+        self.lista_eleitores = tk.Listbox(self.root, height=10, width=40)
+        self.lista_eleitores.grid(row=6, column=0, columnspan=2, pady=10)
+        
+        self.carregar_eleitores()
+        
+    def carregar_eleitores(self):
+        self.lista_eleitores.delete(0, tk.END)
+        self.cursor.execute("SELECT * FROM eleitores")
+        eleitores = self.cursor.fetchall()
+        for eleitor in eleitores:
+            self.lista_eleitores.insert(tk.END, f"{eleitor[1]} - {eleitor[2]} - {eleitor[3]}")
+            
+    def salvar(self):
+        nome = self.entry_nome.get()
+        endereco = self.entry_endereco.get()
+        local_votacao = self.entry_local_votacao.get()
+        
+        if nome and endereco and local_votacao:
+            self.cursor.execute("INSERT INTO eleitores (nome, endereco, local_votacao) VALUES (?, ?, ?)",
+                                (nome, endereco, local_votacao))
+            self.conn.commit()
+            self.carregar_eleitores()
+            self.limpar_campos()
+            messagebox.showinfo("Sucesso", "Eleitor cadastrado com sucesso!")
+        else:
+            messagebox.showerror("Erro", "Preencha todos os campos.")
+
+    def editar(self):
+        selected_index = self.lista_eleitores.curselection()
+        if selected_index:
+            eleitor_info = self.lista_eleitores.get(selected_index[0])
+            nome, endereco, local_votacao = eleitor_info.split(" - ")
+            self.entry_nome.delete(0, tk.END)
+            self.entry_nome.insert(0, nome)
+            self.entry_endereco.delete(0, tk.END)
+            self.entry_endereco.insert(0, endereco)
+            self.entry_local_votacao.delete(0, tk.END)
+            self.entry_local_votacao.insert(0, local_votacao)
+            
+            self.excluir()
+        
+    def excluir(self):
+        selected_index = self.lista_eleitores.curselection()
+        if selected_index:
+            eleitor_info = self.lista_eleitores.get(selected_index[0])
+            nome, endereco, local_votacao = eleitor_info.split(" - ")
+            
+            self.cursor.execute("DELETE FROM eleitores WHERE nome = ? AND endereco = ? AND local_votacao = ?",
+                                (nome, endereco, local_votacao))
+            self.conn.commit()
+            self.carregar_eleitores()
+            self.limpar_campos()
+            messagebox.showinfo("Sucesso", "Eleitor excluído com sucesso!")
+        
+    def limpar_campos(self):
+        self.entry_nome.delete(0, tk.END)
+        self.entry_endereco.delete(0, tk.END)
+        self.entry_local_votacao.delete(0, tk.END)
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = CadastroEleitoresApp(root)
+    root.mainloop()
