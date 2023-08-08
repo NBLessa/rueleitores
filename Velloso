@@ -1,0 +1,88 @@
+import tkinter as tk
+from tkinter import simpledialog, messagebox
+from tkcalendar import Calendar
+import os
+
+class VisualAcuityTest:
+    def __init__(self):
+        self.root = tk.Tk()
+        self.root.title("Teste de Acuidade Visual - Velloso")
+        self.root.configure(bg="light blue")
+
+        self.create_results_folder()
+
+    def create_results_folder(self):
+        if not os.path.exists("acuity_results"):
+            os.makedirs("acuity_results")
+
+    def run(self):
+        self.root.withdraw()
+
+        self.show_dialog()
+
+        self.root.mainloop()
+
+    def show_dialog(self):
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Teste de Acuidade Visual - Velloso")
+        dialog.configure(bg="light blue")
+
+        label_name = tk.Label(dialog, text="Nome do Paciente:", bg="light blue")
+        label_name.pack()
+
+        entry_name = tk.Entry(dialog)
+        entry_name.pack()
+
+        label_date = tk.Label(dialog, text="Data do Teste:", bg="light blue")
+        label_date.pack()
+
+        cal = Calendar(dialog)
+        cal.pack()
+
+        btn_start = tk.Button(dialog, text="Iniciar Teste", command=lambda: self.start_test(dialog, entry_name.get(), cal.get_date()))
+        btn_start.pack()
+
+    def start_test(self, dialog, name, date):
+        dialog.destroy()
+
+        self.results = []
+
+        acuity_chart = [
+            ("E", "F", "P", "T", "O"),
+            ("T", "O", "Z", "P", "E"),
+            ("F", "Z", "E", "D", "T"),
+            ("P", "D", "O", "F", "Z"),
+            ("Z", "E", "T", "E", "F")
+        ]
+
+        for row in acuity_chart:
+            row_result = []
+            for symbol in row:
+                response = self.show_dialog_test(f"Qual é a letra/símbolo na posição {symbol}?")
+                row_result.append(response)
+            self.results.append(row_result)
+
+        self.save_results(name, date)
+        self.display_results()
+
+    def show_dialog_test(self, prompt):
+        response = simpledialog.askstring("Teste de Acuidade Visual - Velloso", prompt, bg="light blue")
+        return response if response else "N/A"
+
+    def save_results(self, name, date):
+        result_text = f"Resultados do Teste de Acuidade Visual - Velloso\nNome do Paciente: {name}\nData do Teste: {date}\n\n"
+        for i, row_result in enumerate(self.results):
+            result_text += f"Fileira {i + 1}: {' '.join(row_result)}\n"
+        file_name = os.path.join("acuity_results", f"{name}_{date.replace('-', '').replace(':', '').replace(' ', '_')}.txt")
+        with open(file_name, "w") as file:
+            file.write(result_text)
+
+    def display_results(self):
+        result_text = "Resultados do Teste de Acuidade Visual - Velloso:\n\n"
+        for i, row_result in enumerate(self.results):
+            result_text += f"Fileira {i + 1}: {' '.join(row_result)}\n"
+        messagebox.showinfo("Resultados", result_text)
+
+if __name__ == "__main__":
+    test = VisualAcuityTest()
+    test.run()
